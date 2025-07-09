@@ -1,3 +1,22 @@
+
+import os
+import argparse
+
+
+def find_videos_without_subtitles(root_dir, video_exts=None, subtitle_exts=None):
+    """Return a list of video files missing accompanying subtitle files."""
+    video_exts = [ext.lower() for ext in (video_exts or ['.mp4'])]
+    subtitle_exts = [ext.lower() for ext in (subtitle_exts or ['.lrc', '.txt', '.srt', '.vtt'])]
+
+    missing = []
+
+    for dirpath, _, filenames in os.walk(root_dir):
+        for filename in filenames:
+            base, ext = os.path.splitext(filename)
+            if ext.lower() in video_exts:
+                if not any(os.path.exists(os.path.join(dirpath, base + s_ext)) for s_ext in subtitle_exts):
+                    missing.append(os.path.join(dirpath, filename))
+
 #!/usr/bin/env python3
 """Utility to list .mp4 files missing subtitle files.
 
@@ -34,9 +53,23 @@ def find_missing_subtitles(directory: str, video_ext: str = ".mp4", subtitle_ext
                 if not any(os.path.exists(os.path.join(root, base + ext)) for ext in subtitle_exts):
                     missing.append(video_path)
 
+
     return missing
 
 
+
+def main():
+    parser = argparse.ArgumentParser(description="Find video files missing subtitle files.")
+    parser.add_argument("root", help="Root directory to search")
+    parser.add_argument("--video-exts", nargs="*", default=['.mp4'],
+                        help="Video file extensions to check")
+    parser.add_argument("--subtitle-exts", nargs="*", default=['.lrc', '.txt', '.srt', '.vtt'],
+                        help="Subtitle file extensions")
+    args = parser.parse_args()
+
+    missing = find_videos_without_subtitles(args.root, args.video_exts, args.subtitle_exts)
+
+=======
 def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Find video files missing subtitles")
     parser.add_argument(
@@ -62,6 +95,7 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
 def main(argv: Iterable[str] | None = None) -> None:
     args = parse_args(argv)
     missing = find_missing_subtitles(args.directory, args.video_ext, args.subtitle_exts)
+
     for path in missing:
         print(path)
 
